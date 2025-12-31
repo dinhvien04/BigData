@@ -1,4 +1,4 @@
-# Tài liệu ôn tập PySpark - Trực quan hóa và Phân tích dữ liệu lớn
+# Tài liệu ôn tập PySpark - Phân tích dữ liệu lớn
 
 ## Mục lục tài liệu
 
