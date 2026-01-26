@@ -37,38 +37,177 @@ Nhận xét: Vector của "Mèo" và "Chó" gần nhau hơn so với "Ô tô" v�
 Để đo "độ tương tự" giữa hai đối tượng, ta tính khoảng cách giữa hai vector của chúng:
 
 #### a) Khoảng cách Euclid (Euclidean Distance)
+
+**Công thức**:
+
+$$d(\mathbf{p}, \mathbf{q}) = \sqrt{\sum_{i=1}^{n}(q_i - p_i)^2}$$
+
+Hay viết đầy đủ:
+
+$$d(\mathbf{p}, \mathbf{q}) = \sqrt{(q_1-p_1)^2 + (q_2-p_2)^2 + \cdots + (q_n-p_n)^2}$$
+
+**Minh họa**:
 ```
-d(A, B) = √[(a₁-b₁)² + (a₂-b₂)² + ... + (aₙ-bₙ)²]
+      Queen [0.3, 0.9]
+        ↗
+       /
+      /  d(King, Queen)
+     /
+    /
+   ↗ King [0.5, 0.7]
+  /
+ /
+O────────────────→
 ```
-- Khoảng cách càng nhỏ → hai vector càng giống nhau
-- Giống như đo khoảng cách thẳng trong không gian
+
+**Giải thích**:
+- Đo khoảng cách thẳng giữa hai điểm trong không gian n chiều
+- Khoảng cách càng **nhỏ** → hai vector càng **giống nhau**
+- Khoảng cách = 0 → hai vector giống hệt nhau
+- Phụ thuộc vào độ lớn (magnitude) của vector
+
+**Ví dụ tính toán**:
+```
+p = [1, 2, 3]
+q = [4, 5, 6]
+
+d(p,q) = √[(4-1)² + (5-2)² + (6-3)²]
+       = √[9 + 9 + 9]
+       = √27
+       = 5.196
+```
+
+---
 
 #### b) Tích vô hướng (Dot Product)
-```
-A · B = a₁×b₁ + a₂×b₂ + ... + aₙ×bₙ
-```
-- Giá trị càng lớn → hai vector càng giống nhau
-- Phụ thuộc vào độ lớn của vector
 
-#### c) Độ tương tự Cosine (Cosine Similarity)
-```
-cos(θ) = (A · B) / (||A|| × ||B||)
-```
-- Giá trị từ -1 đến 1
-- 1: hoàn toàn giống nhau
-- 0: không liên quan
-- -1: hoàn toàn trái ngược
-- **Phổ biến nhất** vì không phụ thuộc vào độ lớn vector
+**Công thức**:
 
-**Ví dụ minh họa**:
-```
-Vector "Vua" = [0.8, 0.3, 0.1]
-Vector "Nữ hoàng" = [0.7, 0.4, 0.2]
-Vector "Táo" = [0.1, 0.2, 0.9]
+$$\mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^{n} a_i \times b_i$$
 
-→ Cosine("Vua", "Nữ hoàng") = 0.95 (rất giống)
-→ Cosine("Vua", "Táo") = 0.25 (không liên quan)
+Hay viết đầy đủ:
+
+$$\mathbf{a} \cdot \mathbf{b} = a_1 \times b_1 + a_2 \times b_2 + \cdots + a_n \times b_n$$
+
+**Minh họa**:
 ```
+      Queen
+        ↗
+       /
+      /  ← Tích vô hướng phụ thuộc
+     /      vào độ dài và góc
+    /
+   ↗ King
+  /
+ /
+O────────────────→
+```
+
+**Giải thích**:
+- Nhân từng cặp phần tử tương ứng rồi cộng lại
+- Giá trị càng **lớn** → hai vector càng **giống nhau**
+- Giá trị dương → cùng hướng
+- Giá trị âm → ngược hướng
+- **Hạn chế**: Phụ thuộc vào độ lớn của vector
+
+**Ví dụ tính toán**:
+```
+a = [1, 2, 3]
+b = [4, 5, 6]
+
+a · b = (1×4) + (2×5) + (3×6)
+      = 4 + 10 + 18
+      = 32
+```
+
+---
+
+#### c) Độ tương tự Cosine (Cosine Similarity) ⭐
+
+**Công thức**:
+
+$$\cos(\theta) = \frac{\mathbf{A} \cdot \mathbf{B}}{\|\mathbf{A}\| \|\mathbf{B}\|} = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \times \sqrt{\sum_{i=1}^{n} B_i^2}}$$
+
+**Trong đó**:
+- $\mathbf{A} \cdot \mathbf{B}$ : Tích vô hướng của A và B
+- $\|\mathbf{A}\|$ : Độ dài (norm) của vector A = $\sqrt{A_1^2 + A_2^2 + \cdots + A_n^2}$
+- $\|\mathbf{B}\|$ : Độ dài (norm) của vector B = $\sqrt{B_1^2 + B_2^2 + \cdots + B_n^2}$
+- $\theta$ : Góc giữa hai vector
+
+**Minh họa**:
+```
+      Queen [0.3, 0.9]
+        ↗
+       / θ ← Góc giữa 2 vector
+      /      (không phụ thuộc độ dài)
+     /
+    /
+   ↗ King [0.5, 0.7]
+  /
+ /
+O────────────────→
+
+cos(θ) = 1   → Cùng hướng (giống nhau)
+cos(θ) = 0   → Vuông góc (không liên quan)
+cos(θ) = -1  → Ngược hướng (trái ngược)
+```
+
+**Giải thích**:
+- Đo góc giữa hai vector (không phụ thuộc độ lớn)
+- Giá trị từ **-1 đến 1**:
+  - **1**: Hoàn toàn giống nhau (góc 0°)
+  - **0**: Không liên quan (góc 90°)
+  - **-1**: Hoàn toàn trái ngược (góc 180°)
+- **Phổ biến nhất** trong NLP vì không bị ảnh hưởng bởi độ dài văn bản
+
+**Ví dụ tính toán chi tiết**:
+
+Cho $\mathbf{A} = [1, 2, 3]$ và $\mathbf{B} = [4, 5, 6]$
+
+**Bước 1**: Tính tích vô hướng
+$$\mathbf{A} \cdot \mathbf{B} = (1 \times 4) + (2 \times 5) + (3 \times 6) = 4 + 10 + 18 = 32$$
+
+**Bước 2**: Tính độ dài vector A
+$$\|\mathbf{A}\| = \sqrt{1^2 + 2^2 + 3^2} = \sqrt{1 + 4 + 9} = \sqrt{14} = 3.742$$
+
+**Bước 3**: Tính độ dài vector B
+$$\|\mathbf{B}\| = \sqrt{4^2 + 5^2 + 6^2} = \sqrt{16 + 25 + 36} = \sqrt{77} = 8.775$$
+
+**Bước 4**: Tính cosine similarity
+$$\cos(\theta) = \frac{32}{3.742 \times 8.775} = \frac{32}{32.835} = 0.975$$
+
+**Kết luận**: Hai vector rất giống nhau! (0.975 ≈ 1)
+
+---
+
+**Ví dụ so sánh từ**:
+
+Cho:
+- Vector "King" = $[0.5, 0.7]$
+- Vector "Queen" = $[0.3, 0.9]$
+- Vector "Apple" = $[0.9, 0.1]$
+
+**So sánh "King" vs "Queen"**:
+- Tử số: $(0.5 \times 0.3) + (0.7 \times 0.9) = 0.15 + 0.63 = 0.78$
+- Mẫu số: $\sqrt{0.5^2+0.7^2} \times \sqrt{0.3^2+0.9^2} = 0.860 \times 0.949 = 0.816$
+- Kết quả: $\cos(\theta) = 0.78 / 0.816 = 0.955$ → **Rất giống nhau!**
+
+**So sánh "King" vs "Apple"**:
+- Tử số: $(0.5 \times 0.9) + (0.7 \times 0.1) = 0.45 + 0.07 = 0.52$
+- Mẫu số: $0.860 \times 0.905 = 0.778$
+- Kết quả: $\cos(\theta) = 0.52 / 0.778 = 0.668$ → **Hơi liên quan**
+
+**Kết luận**: "King" gần "Queen" hơn là "Apple"
+
+---
+
+**So sánh 3 độ đo**:
+
+| Độ đo | Công thức | Giá trị | Ưu điểm | Nhược điểm | Dùng khi nào |
+|-------|-----------|---------|---------|------------|--------------|
+| **Euclid** | $d = \sqrt{\sum(q_i-p_i)^2}$ | 0 → ∞ (nhỏ = giống) | Trực quan, dễ hiểu | Phụ thuộc độ lớn | So sánh vector cùng scale |
+| **Dot Product** | $a \cdot b = \sum a_i b_i$ | -∞ → ∞ (lớn = giống) | Tính nhanh | Phụ thuộc độ lớn | Tính toán trung gian |
+| **Cosine** | $\cos\theta = \frac{A \cdot B}{\|A\|\|B\|}$ | -1 → 1 (1 = giống) | Không phụ thuộc độ lớn | Tính chậm hơn | **NLP, Text Mining** |
 
 ---
 
