@@ -1954,3 +1954,709 @@ Biên soạn theo các tài liệu Level 2 đã có trong buổi học:
 Tài liệu diễn giải lại để dễ học, **không chép nguyên văn slide và không bao gồm Level 3**. Các ví dụ số và công thức vật lý/toán học bổ sung phục vụ giải thích. **Guideline của dự án là nguồn chuẩn** cho class, yaw, occlusion, hệ tọa độ, format, thang đo và quyền thao tác trên annotation thật.
 
 **HẾT – VINUNI AI20K LEVEL 2 DAY 01–14.**
+
+# DAY 10 – DMS VÀ OMS
+
+## 1. DMS khác OMS ra sao? [TRỌNG TÂM]
+
+**DMS – Driver Monitoring System:** Hệ thống camera và thuật toán hướng vào **người lái** để giám sát các dấu hiệu như mất tập trung, ngáp, mắt nhắm kéo dài, quay đầu. Ví dụ tài xế nhìn điện thoại thay vì nhìn đường.
+
+**OMS – Occupant Monitoring System:** Hệ thống giám sát **những người ngồi trong cabin**, tư thế, vị trí người/người lớn/trẻ em, dây an toàn và các tình huống an toàn theo mục tiêu dự án.
+
+**ADAS – Advanced Driver Assistance Systems:** Hệ thống hỗ trợ lái, thường khai thác cảnh ngoài xe và trạng thái chuyển động của xe. Camera DMS/OMS nhìn **vào cabin** nên dữ liệu khuôn mặt và hành vi cần được bảo vệ theo chính sách.
+
+**Dễ nhầm:** DMS và OMS không chỉ khác nhau ở loại model; khác **đối tượng quan sát** và **câu hỏi cần trả lời**.
+
+## 2. Landmark 50 điểm trên khuôn mặt [TRỌNG TÂM]
+
+**Facial Landmark:** Điểm mốc có tên, chỉ số và vị trí trên khuôn mặt. Tọa độ giúp đo hình học hoặc theo dõi chuyển động khuôn mặt.
+
+Bộ bài tập DMS trong khóa dùng **đúng 50 điểm**, không được áp sơ đồ 68/98 điểm trên mạng:
+
+| Vùng mặt | Index | Số điểm |
+|---|---|---:|
+| Lông mày trái | 0–4 | 5 |
+| Lông mày phải | 5–9 | 5 |
+| Sống mũi | 10–13 | 4 |
+| Mắt trái | 14–21 | 8 |
+| Mắt phải | 22–29 | 8 |
+| Môi ngoài | 30–41 | 12 |
+| Môi trong | 42–49 | 8 |
+| **Tổng** | **0–49** | **50** |
+
+**Ví dụ:** Người đeo kính làm khuất một phần mí mắt. Nếu guideline yêu cầu ước lượng vị trí điểm bị che thì vẫn đặt điểm và đánh dấu **occluded**, không tự biến nó thành một điểm “ngoài khung hình”.
+
+**Mắt nhắm:** Mí trên và dưới sát lại; không có nghĩa toàn bộ điểm mắt bị mất. Chỉ số điểm và topology phải theo **schema thực tế của task**.
+
+## 3. EAR – Eye Aspect Ratio [TRỌNG TÂM]
+
+**Khái niệm:** Tỷ lệ giữa độ mở dọc và bề rộng ngang của mắt. Hệ thống có thể dùng EAR làm một tín hiệu phát hiện mắt nhắm.
+
+Với sáu điểm quanh một mắt: \(p_1,p_4\) là hai góc mắt; hai cặp \(p_2,p_6\) và \(p_3,p_5\) biểu thị khoảng cách giữa mí trên/mí dưới.
+
+$$
+\boxed{EAR=\frac{\|p_2-p_6\|+\|p_3-p_5\|}{2\|p_1-p_4\|}}
+$$
+
+**Ký hiệu:** \(\|p_i-p_j\|\) là **khoảng cách** giữa hai điểm trong ảnh. Mẫu số dùng **hai lần chiều rộng mắt** để chuẩn hóa theo kích thước.
+
+**Ví dụ tính tay:** Hai khoảng cách dọc là 4 và 6 pixel, chiều ngang là 20 pixel:
+
+$$
+EAR=(4+6)/(2\times20)=10/40=\boxed{0.25}.
+$$
+
+Khi mắt nhắm, khoảng cách mí trên–dưới giảm → EAR thường giảm.
+
+**Không được kết luận “buồn ngủ” từ đúng một frame EAR thấp**; cần ngưỡng, thời gian và tín hiệu khác. Muốn áp EAR sáu điểm vào skeleton 8 điểm mắt của bài DMS, phải chọn đúng sáu mốc **tương ứng**, không lấy sáu index liên tiếp tùy tiện.
+
+## 4. MAR – Mouth Aspect Ratio
+
+**Khái niệm:** Chỉ số hình học của mức mở miệng, được dùng như một tín hiệu phát hiện hành động ngáp.
+
+Slide dạy **nguyên lý tương tự EAR nhưng lấy các điểm viền môi**, và bộ 50 điểm có môi ngoài/môi trong riêng. Một cách viết minh họa nếu đã chọn sáu điểm miệng tương ứng:
+
+$$
+MAR=\frac{\|q_2-q_6\|+\|q_3-q_5\|}{2\|q_1-q_4\|}.
+$$
+
+**Lưu ý:** Công thức ở trên là **diễn giải sáu điểm**; chỉ dùng khi việc chọn điểm \(q_i\) khớp định nghĩa MAR của model/dataset. Các công trình khác nhau có nhiều biến thể MAR.
+
+**Ví dụ:** Khi người ngáp, khoảng cách dọc hai môi lớn lên, MAR thường tăng và có thể duy trì cao một khoảng thời gian.
+
+## 5. PERCLOS
+
+**PERCLOS:** Phần thời gian mắt được xác định là **nhắm** trong một cửa sổ quan sát, theo một quy tắc ngưỡng cụ thể. Nó đo **thời gian**, khác EAR đo **hình học của frame**.
+
+Một cách diễn giải đơn giản:
+
+$$
+PERCLOS=\frac{\text{Thời gian mắt được coi là nhắm}}{\text{Tổng thời gian quan sát hợp lệ}}\times100\%.
+$$
+
+**Ví dụ:** Mắt ở trạng thái nhắm theo quy tắc 6 giây trong 60 giây hợp lệ → 10%. Trong hệ thống thực tế, cách xử lý chớp mắt và mức nhắm được quy định riêng.
+
+## 6. Head Pose khác Gaze ra sao? [TRỌNG TÂM]
+
+**Yaw:** Quay đầu trái/phải.
+
+**Pitch:** Cúi/ngẩng đầu.
+
+**Roll:** Nghiêng đầu về một bên vai.
+
+**Gaze:** Hướng ánh mắt/con ngươi. Người có thể **nhìn trái trong khi đầu vẫn hướng thẳng**; vì vậy gaze ≠ head pose.
+
+## 7. Từ Keypoint đến hành vi
+
+Một điểm tọa độ riêng lẻ **không phải nhãn hành vi**. Chuỗi xử lý:
+
+~~~text
+Landmark/Keypoint theo frame
+       → EAR, MAR, PERCLOS, Head Pose hoặc đặc trưng thời gian
+       → Rules / Mô hình nhận diện chuỗi
+       → Nhãn hành vi + đánh giá
+~~~
+
+**ST-GCN:** Mạng học cấu trúc liên kết giữa các khớp và diễn biến theo thời gian. Đây là **model**, không phải một loại shape mới trong CVAT.
+
+## 8. OMS và QC
+
+OMS có thể sử dụng bộ **COCO-17** cho mỗi người trong cabin, Box cho từng người, Track ID theo video, trạng thái occluded/outside và Annotation dây an toàn theo schema.
+
+**Group:** Liên kết Box/Skeleton/thuộc tính cùng người theo workflow; **Group không thay thế Track ID** (ID dùng để theo dõi theo thời gian).
+
+**Những lỗi phải phát hiện:** Sai thứ tự landmark, đảo trái/phải, mắt nhắm bị vẽ thành mắt mở, quên occluded, group sai người, đánh giá hành vi từ chỉ một frame.
+
+**Tự kiểm tra Day 10:** (1) DMS khác OMS ở đâu? (2) Bộ 50 điểm có bao nhiêu điểm môi trong? (3) EAR thấp một frame đủ kết luận ngủ gật không? (4) Yaw có đồng nghĩa gaze không?
+
+---
+
+# DAY 11 – SURROUND VIEW VÀ FISHEYE
+
+## 1. SVM, Fisheye và Camera Distortion
+
+**SVM – Surround View Monitoring:** Hệ quan sát nhiều hướng xung quanh xe bằng các camera, hữu ích khi đỗ/lùi/chuyển động chậm.
+
+**Fisheye:** Camera góc nhìn rộng, làm ảnh bị biến dạng hình học rõ rệt gần rìa.
+
+**Distortion:** Một đường thẳng hoặc xe ở ngoài đời có thể trông cong/kéo giãn trên ảnh.
+
+**Ví dụ:** Một chiếc xe chạy từ giữa ảnh ra sát biên, số pixel/hình dáng biểu kiến thay đổi nhiều. Không nên vẽ box theo “hình dạng xe tưởng tượng” nếu guideline yêu cầu **visible extent trong ảnh raw**.
+
+## 2. Bốn không gian annotation [TRỌNG TÂM]
+
+**Raw Fisheye:** Ảnh sensor gốc, còn méo hình.
+
+**Rectified:** Ảnh đã biến đổi để giảm biến dạng theo mô hình camera.
+
+**Stitched:** Ảnh tổng hợp/ghép từ nhiều camera; có thể xuất hiện lỗi trên đường nối.
+
+**BEV – Bird's-Eye View:** Biểu diễn nhìn từ trên xuống, phụ thuộc phép chiếu và calibration.
+
+**Điểm quan trọng:** Annotation tọa độ của raw image **không tự dùng đúng** trên rectified image/BEV nếu không biến đổi phù hợp.
+
+## 3. Edge Zone, Stitching Seam và Overlap Zone
+
+**Edge Zone:** Vùng rìa ảnh, distortion có thể mạnh; thường cần báo cáo QC riêng.
+
+**Stitching Seam:** Đường ghép hai camera trong ảnh tổng hợp, dễ tạo ảnh méo, đứt, lặp vật hoặc thiếu vùng.
+
+**Overlap Zone:** Khu vực được **hai camera cùng nhìn thấy**.
+
+**Ignore Region:** Vùng bỏ qua trong annotation/evaluation theo rule, ví dụ lens border hoặc hình thân xe chắn tầm nhìn.
+
+**Bẫy:** Một xe xuất hiện trong hai camera không đương nhiên là duplicate phải xóa; cần hiểu schema đa camera.
+
+## 4. Occluded khác Truncated
+
+**Occluded:** Bị vật khác che. Ví dụ xe bị cột che nửa thân.
+
+**Truncated:** Bị **biên ảnh/FOV** cắt mất một phần. Ví dụ nửa xe đã ở ngoài ảnh.
+
+**Visible Extent:** Phần vật thể đang thật sự nhìn thấy trong ảnh. Ở bài SVM, quy tắc box theo visible extent phải tuân theo guideline cụ thể của không gian raw/rectified.
+
+## 5. Annotation Lane và Free Space trên fisheye
+
+**Lane Marking:** Dùng Polyline bám theo vạch; không tự kéo xuyên vật cản/seam nếu rule yêu cầu tách.
+
+**Free Space/Drivable Polygon:** Chỉ tô vùng hợp lệ cho ego; không nối xuyên vùng không thấy do ego body hoặc ghép ảnh lỗi.
+
+**Box Object:** Kiểm vùng distortion, truncated, edge_zone, occluded và ignore_reason khi schema có.
+
+## 6. Gold Set, Sampling Plan và Camera-Specific QC [TRỌNG TÂM]
+
+**Gold Set theo camera:** Tập nhãn chuẩn cho từng camera/hướng và những vùng khó, không chỉ từ camera trước dễ nhìn.
+
+**Sampling Plan:** Lấy mẫu cân bằng theo view và ưu tiên tình huống rủi ro cao như edge zone, night, rain, glare, small/far object, seam, overlap, reverse/parking.
+
+**Camera Error Analysis:** Báo cáo lỗi riêng theo camera_id, vị trí ảnh, kích thước vật, ánh sáng, distortion.
+
+**Metric:** Box IoU/Precision/Recall, mask IoU/boundary error, line distance, attribute accuracy.
+
+**Dễ nhầm:** Accuracy gộp cao không đảm bảo camera bên trái không bỏ sót hàng loạt người hoặc xe ở rìa.
+
+**Tự kiểm tra Day 11:** (1) Raw khác rectified ở đâu? (2) Một nửa xe ra ngoài biên ảnh là truncated hay occluded? (3) Vì sao cần QC tách theo camera?
+
+---
+
+# DAY 12 – LiDAR POINT CLOUD VÀ 3D CUBOID
+
+## 1. LiDAR, Camera và Radar [TRỌNG TÂM]
+
+**LiDAR – Light Detection and Ranging:** Đo khoảng cách bằng ánh sáng, tạo tập điểm hình học 3D.
+
+**Camera:** Thu ảnh pixel, có màu/texture/ký tự/đặc điểm nhận dạng.
+
+**Radar:** Cảm biến phản xạ sóng điện từ; trong nhiều hệ hỗ trợ đo vận tốc **xuyên tâm** theo hướng radar–vật.
+
+**Time-of-Flight:** Ý tưởng đo thời gian đi-về của tín hiệu để tính khoảng cách. Công thức vật lý **bổ sung để hiểu nguyên lý**:
+
+$$
+d=\frac{c\,\Delta t}{2},
+$$
+
+với \(c\) là tốc độ ánh sáng, \(\Delta t\) là thời gian tín hiệu khứ hồi; chia 2 vì tín hiệu đi đến vật rồi quay về.
+
+**Bẫy:** Camera không tự đo được chiều sâu metric duy nhất từ một pixel; LiDAR có điểm 3D nhưng không cung cấp chi tiết màu/chữ tốt như camera.
+
+## 2. Point Cloud là gì?
+
+**Point Cloud:** Một đám mây các điểm rời rạc trong 3D, thường có tọa độ:
+
+$$
+\boxed{P=(x,y,z)}.
+$$
+
+**Ego Frame:** Hệ tọa độ tham chiếu gắn với xe/hệ thống; cần biết gốc và chiều các trục.
+
+**Point Density:** Mật độ điểm. Vật xa/đang che khuất thường có ít điểm hơn, **không có nghĩa nó thật nhỏ đi**.
+
+**Ground Plane:** Mặt phẳng/bề mặt đất để kiểm đáy cuboid.
+
+**Point Cloud khác Mesh:** Point cloud là điểm rời, mesh có các mặt/cạnh nối thành bề mặt.
+
+## 3. Top, Front, Side View [TRỌNG TÂM]
+
+**Top/BEV:** Nhìn từ trên, tốt để kiểm x-y, L, W và Yaw.
+
+**Front:** Kiểm bề ngang, chiều cao, mặt đáy.
+
+**Side:** Kiểm z, chiều cao và đáy.
+
+**Ví dụ:** Trên Top cuboid có thể bao khít footprint chiếc xe nhưng vẫn bị “xuyên mặt đường” theo z; phải mở Side/Front.
+
+## 4. Năm class Robotaxi 3D theo bài học
+
+| Class | Ý nghĩa |
+|---|---|
+| **Vehicle** | Ô tô, xe tải, xe buýt/phương tiện cơ giới nhiều bánh theo guideline |
+| **Two-wheels** | Xe máy, xe đạp, xe điện hai bánh |
+| **Pedestrian** | Người đi bộ/đứng |
+| **Animal** | Động vật |
+| **Obstacle** | Vật cản khác, như rào, cọc, vật rơi theo định nghĩa task |
+
+**Quan trọng:** Đổi dataset phải đọc lại taxonomy; không map class KITTI/nuScenes sang VinFast theo cảm tính.
+
+## 5. Bảy tham số 3D Cuboid [TRỌNG TÂM]
+
+**Cuboid:** Hình hộp 3D bao một đối tượng, có vị trí, kích thước và hướng.
+
+$$
+\boxed{(x,y,z,L,W,H,yaw)}.
+$$
+
+- **x,y,z:** Tâm cuboid trong hệ tọa độ quy ước.
+- **L:** Chiều dài.
+- **W:** Chiều rộng.
+- **H:** Chiều cao.
+- **yaw:** Góc quay quanh trục đứng/hướng đầu theo convention.
+
+**Ground Contact:** Quan hệ đáy box với mặt đất, **không phải tham số thứ tám**.
+
+**Ví dụ:** Xe có kích thước dài 4.2 m, rộng 1.8 m, cao 1.6 m. Phải giữ đúng L/W theo **heading**, không nhầm trục màn hình với trục thân xe.
+
+## 6. Yaw và Heading dễ nhầm nhất
+
+**Heading:** Hướng mặt trước/đầu của xe theo quy tắc.
+
+**Yaw:** Góc biểu diễn hướng này quanh trục z.
+
+**Không đồng nghĩa hướng di chuyển:** Xe đang lùi có vận tốc ngược hướng đầu; xe đứng yên vẫn có heading.
+
+**Lật 180°:** Hai box có cùng center/L/W/H vẫn **không tương đương** nếu heading đối nghịch. Khi point cloud thưa phải xem evidence và camera hợp lệ.
+
+## 7. Ground Contact và z
+
+**Box xuyên đất:** Đáy quá thấp.
+
+**Box nổi:** Đáy quá cao.
+
+**Oversize/Undersize:** Box lớn/nhỏ hơn thực tế theo guideline.
+
+Nếu \(z\) được định nghĩa là tọa độ **tâm hình học** của box, quan hệ minh họa:
+
+$$
+z_{\mathrm{bottom}}=z-\frac H2.
+$$
+
+**Không áp dụng** nếu format định nghĩa z là tâm đáy thay vì tâm hộp.
+
+## 8. Quy trình annotate 3D trong CVAT
+
+1. Đọc điểm và hệ tọa độ, xác định ground.
+2. Xác định object và class.
+3. Ở Top, chốt center x-y, footprint L/W, heading.
+4. Ở Side/Front, điều chỉnh z, H, đáy.
+5. Kiểm không xuyên đất/không co nhầm kích thước.
+6. Chỉ save theo job và escalatе ca không đủ bằng chứng; không đoán class nếu phân vân.
+
+**Tự kiểm tra Day 12:** (1) Cuboid có bảy số gì? (2) Top view kiểm chiều cao được không? (3) Xe chạy lùi có heading cùng hướng vận tốc không? (4) Xe xa có ít điểm thì được phép co kích thước theo cụm thưa không?
+
+---
+
+# DAY 13 – 3D OBJECT DETECTION
+
+## 1. Sáu bài toán trên Point Cloud
+
+**Classification:** Phân loại một object hoặc tập điểm.
+
+**Detection:** Tìm class, vị trí, kích thước và yaw của object bằng cuboid 3D.
+
+**Segmentation:** Phân loại từng điểm hoặc tách từng instance.
+
+**Tracking:** Giữ danh tính qua thời gian.
+
+**Registration:** Căn chỉnh các lần quét point cloud trong cùng hệ tọa độ.
+
+**SLAM – Simultaneous Localization and Mapping:** Vừa định vị sensor/xe vừa xây dựng bản đồ.
+
+**Bẫy:** Registration không tự suy ra class của tất cả xe trong cảnh.
+
+## 2. Point-based, Voxel-based, Pillar-based [TRỌNG TÂM]
+
+**Point-based:** Xử lý trực tiếp hoặc theo nhóm điểm; ví dụ PointNet++.
+
+**Voxel-based:** Chia không gian thành những ô 3D, gom điểm theo voxel; ví dụ VoxelNet.
+
+**Pillar-based:** Gom điểm thành những **cột đứng**, tạo biểu diễn trên mặt phẳng BEV thuận tiện để dùng CNN 2D; ví dụ PointPillars.
+
+**Center-based:** Tìm tâm vật thể và dự đoán kích thước/hướng; ví dụ CenterPoint.
+
+**Transformer và Sensor Fusion:** Cách học quan hệ rộng hoặc kết hợp nguồn sensor; không phải một định dạng annotation mới.
+
+**Đánh đổi:** Giữ 3D chi tiết thường tốn tính toán; gom thành pillar có thể nhanh hơn nhưng làm gộp bớt cấu trúc chiều cao.
+
+## 3. Model 3D trả về gì?
+
+Thông thường **Class + Confidence Score + Cuboid \((x,y,z,L,W,H,yaw)\)**, có thể thêm các trường khác tùy model.
+
+**Ví dụ:** Prediction Vehicle, score 0.96, L=4.2 W=1.9 H=1.7, yaw=180°. Confidence cao **không chứng minh yaw, chiều cao, đáy đúng**.
+
+## 4. Camera-based, LiDAR-based, Fusion
+
+**Camera-based:** Học ước lượng không gian 3D từ ảnh.
+
+**LiDAR-based:** Dựa trên điểm khoảng cách thực.
+
+**Fusion:** Kết hợp hai hoặc nhiều nguồn.
+
+Trong bài lab, **cuboid GT lấy từ point cloud và guideline**; camera giúp hiểu class, số object hoặc đầu/đuôi xe nhưng không được “kéo kích thước thật” theo cảm giác ảnh 2D.
+
+## 5. Pre-label 3D và Human QC [TRỌNG TÂM]
+
+Chuỗi: Point Cloud → chạy pretrained 3D detector → cuboid đề xuất → annotator review → sửa nhãn theo guideline.
+
+Những lỗi thường gặp:
+
+- Missing Cuboid – bỏ sót vật.
+- False Positive – box không có object.
+- Wrong Class – sai lớp.
+- Wrong Center – tâm sai.
+- Wrong L/W/H – kích thước sai.
+- Wrong Yaw – sai đầu/đuôi.
+- Wrong Ground Contact – nổi/xuyên đất.
+
+**Trình tự kiểm:** Top cho footprint/yaw, Side/Front cho chiều cao và đáy, rồi so class/score và evidence.
+
+## 6. Chuyển hệ tọa độ Z [TRỌNG TÂM]
+
+Trong **pipeline minh họa của slide Day 13**, trước khi đưa dữ liệu vào model:
+
+$$
+\boxed{z_{\mathrm{model}}=z_{\mathrm{source}}-z_{\mathrm{ground}}-h_{\mathrm{sensor}}}.
+$$
+
+Sau khi chạy và đổi kết quả ngược lại:
+
+$$
+\boxed{z_{\mathrm{source}}=z_{\mathrm{model}}+h_{\mathrm{sensor}}+z_{\mathrm{ground}}}.
+$$
+
+- \(z_{\mathrm{source}}\): Tọa độ Z gốc.
+- \(z_{\mathrm{ground}}\): Mốc mặt đất ước lượng.
+- \(h_{\mathrm{sensor}}\): Độ cao sensor theo convention pipeline.
+- \(z_{\mathrm{model}}\): Tọa độ đã chuyển sang hệ model.
+
+**Ví dụ:** \(z_s=3,\ z_g=0.5,\ h_s=1.5\). Tính \(z_m=3-0.5-1.5=1\). Đổi ngược \(1+1.5+0.5=3\).
+
+**Bẫy:** Công thức trên **không phải** quy tắc bắt buộc của tất cả dataset. Phải xem convention.
+
+## 7. Dấu hiệu lỗi pipeline và lỗi annotation
+
+**Một cuboid lệch:** Có thể là lỗi người hoặc model ở object đó.
+
+**Toàn batch cùng lệch theo Z:** Nghi lỗi hệ tọa độ/offset/calibration trước, không kéo từng box để che nguồn lỗi.
+
+**Tự kiểm tra Day 13:** (1) PointPillars thuộc nhóm nào? (2) Confidence cao có chứng minh Heading đúng? (3) Tất cả box lệch cao 1 m thì làm gì trước?
+
+---
+
+# DAY 14 – 3D TRACKING VÀ CALIBRATION
+
+## 1. 3D Tracking – Một vật thể, một danh tính [TRỌNG TÂM]
+
+3D Tracking liên kết **cuboid + Track ID** qua nhiều frame. Annotator phải xem **cả sequence**, không chỉ một ảnh.
+
+**Ví dụ trên slide:** Cùng chiếc xe Track 94 có kích thước **4.19 × 2.04 × 1.82 m** ở frame điểm thưa và frame điểm dày. Khoảng cách làm **mật độ điểm thay đổi**, không làm kích thước xe thật co lại.
+
+## 2. Vòng đời 3D Track
+
+**Enter:** Object vào vùng quan sát/đủ evidence → tạo Track ID.
+
+**Visible:** Quan sát rõ, theo dõi bình thường.
+
+**Occluded:** Bị che/thiếu điểm; giữ danh tính khi có căn cứ.
+
+**Reappear:** Thấy lại sau che, đối chiếu để giữ ID cũ.
+
+**Exit:** Ra khỏi vùng theo dõi, kết thúc track đúng thời điểm.
+
+**Lưu ý:** Không suy đoán vị trí không có evidence nếu guideline yêu cầu ghi ca thiếu điểm và escalate.
+
+## 3. Bảy lỗi Temporal [TRỌNG TÂM]
+
+| Lỗi | Nghĩa dễ hiểu | Ví dụ |
+|---|---|---|
+| **ID Switch** | Hai vật đổi nhầm tên/ID | Xe A ID 3 nhận ID 7 của B |
+| **Merge** | Hai vật bị gộp một track/cuboid | Hai người sát nhau bị một box |
+| **Fragmentation** | Một vật thành nhiều đoạn ID | Xe ID 5 hiện lại thành ID 9 |
+| **Dimension Drift** | L/W/H trôi vô lý trên vật cứng | Xe dài dần 4 m → 4.7 m |
+| **Orientation Drift** | Heading trôi hoặc lật sai | Yaw nhảy 180° lúc điểm thưa |
+| **Sparsity Error** | Ít điểm khiến box co/nhảy/mất | Xe xa chỉ còn vài điểm |
+| **Velocity Jump** | Vị trí nhảy khiến tốc độ phi lý | Cuboid nhảy 6 m trong 0.1 s |
+
+**Đặc biệt:** Merge = nhiều vật thành một; Fragmentation = một vật thành nhiều track. Kiểm theo thời gian để thấy, không đủ nếu xem một frame.
+
+## 4. Keyframe và Interpolation trong 3D
+
+**Keyframe:** Frame người đặt/sửa cuboid dựa trên evidence.
+
+**Interpolation:** CVAT hoặc tool nội suy giữa những keyframe.
+
+**Ví dụ:** Xe rẽ quanh góc cua. Nếu chỉ có mốc đầu/cuối, đường nội suy thẳng có thể rời cụm point cloud. Phải thêm keyframe khi xe đổi hướng và kiểm cả frame do tool sinh tự động.
+
+## 5. Sensor Calibration, Intrinsic, Extrinsic [TRỌNG TÂM]
+
+**Calibration:** Hiệu chuẩn quan hệ hình học giữa sensor để dữ liệu camera và LiDAR có thể so sánh/chiếu qua lại.
+
+**Intrinsic:** Tham số nội tại của camera như **\(f_x,f_y\)** (tiêu cự theo pixel), **\(c_x,c_y\)** (tâm ảnh) và distortion.
+
+**Extrinsic:** Quan hệ vị trí và hướng (quay/tịnh tiến) giữa LiDAR, xe và camera; thường biểu diễn bằng ma trận 4×4.
+
+**Ví dụ:** Camera sau khi lắp lại hơi lệch góc làm tất cả điểm LiDAR overlay trên ảnh trượt cùng phía. Không nên sửa từng cuboid để che một lỗi hiệu chuẩn.
+
+## 6. Chuỗi hệ tọa độ LiDAR → Ego → Camera → Pixel
+
+**LiDAR Frame:** Hệ tọa độ của cảm biến LiDAR.
+
+**Ego Frame:** Hệ tọa độ lấy xe làm mốc.
+
+**Camera Frame:** Hệ tọa độ của camera.
+
+**Pixel Frame:** \((u,v)\) trên ảnh.
+
+Theo chiều ma trận được bài mô tả, phép chuyển điểm có thể viết bằng tọa độ thuần nhất:
+
+$$
+P_{\mathrm{camera}}=
+T_{\mathrm{ego}\to\mathrm{camera}}\,
+T_{\mathrm{LiDAR}\to\mathrm{ego}}\,
+P_{\mathrm{LiDAR}}.
+$$
+
+**Cần nhớ:** Đọc chiều thực tế của từng ma trận T trong file calibration. Không tự lấy nghịch đảo nếu file vốn đã ở đúng chiều.
+
+## 7. Phép chiếu điểm 3D → 2D [TRỌNG TÂM]
+
+Cho điểm trong **hệ camera** \(P=(X,Y,Z)\); theo mô hình camera lỗ kim chưa xét méo ống kính:
+
+$$
+\boxed{u=f_x\frac{X}{Z}+c_x},\qquad
+\boxed{v=f_y\frac{Y}{Z}+c_y}.
+$$
+
+Trong đó:
+
+- **X, Y, Z:** Tọa độ điểm 3D trong camera frame.
+- **Z:** Độ sâu trên trục nhìn theo convention của camera; phải khác 0.
+- **\(f_x,f_y\):** Tiêu cự theo pixel.
+- **\(c_x,c_y\):** Tâm ảnh.
+- **u, v:** Vị trí pixel.
+
+**Ví dụ tính nhẩm:** X=2 m; Y=0; Z=10 m; fx=fy=1000; cx=500; cy=300.
+
+$$
+u=1000(2/10)+500=700,\qquad
+v=1000(0/10)+300=300.
+$$
+
+Kết quả \((u,v)=(700,300)\).
+
+**Vì sao Z ở mẫu số?** Cùng kích thước vật lý, vật càng xa camera thì hình chiếu trên ảnh thường càng nhỏ.
+
+**Không thể từ một pixel suy duy nhất tọa độ 3D:** Nhiều điểm khác Z nằm trên cùng tia camera có thể chiếu ra cùng pixel.
+
+## 8. Vì sao Camera và LiDAR không khớp? [TRỌNG TÂM]
+
+**FOV – Field of View:** Object có point cloud nhưng ngoài góc nhìn của camera đang chọn. Thử camera khác phù hợp, không xóa cuboid LiDAR hợp lệ.
+
+**Occlusion:** Sensor A thấy, sensor B bị chắn bởi vật khác hoặc góc nhìn khác.
+
+**Sparse Points:** Camera nhìn rõ xe, LiDAR chỉ có vài điểm. Giữ kích thước vật lý nhất quán theo track; không phóng thu L/W/H theo ảnh.
+
+**Calibration Error:** Nhiều object/frame có hình chiếu lệch cùng chiều → kiểm metadata, ma trận, camera và timestamp rồi escalate.
+
+## 9. Radar và Velocity Jump
+
+**Radial Velocity:** Vận tốc theo hướng từ radar đến vật; **không bằng** tốc độ toàn phần khi vật chuyển động chéo.
+
+**Velocity Jump:** Khi cuboid cùng ID nhảy vị trí trong thời gian cực ngắn, tốc độ suy ra có thể không hợp lý.
+
+Công thức vật lý bổ sung để hiểu việc kiểm lỗi:
+
+$$
+v=\frac{\sqrt{(\Delta x)^2+(\Delta y)^2+(\Delta z)^2}}{\Delta t}.
+$$
+
+**Ví dụ:** Box nhảy 6 m trong 0.1 giây → 60 m/s ≈ 216 km/h. Nếu xe thật đang đi rất chậm, nghi nhãn vị trí sai, không tự kết luận xe đã tăng tốc thật.
+
+## 10. Checklist tự QC một track 3D
+
+1. Xem từ Enter đến Exit, kiểm mọi lần tạo/mất ID.
+2. Kiểm cùng vật có cùng Track ID, không merge/fragmentation.
+3. Dùng frame nhiều điểm để xác minh L/W/H.
+4. Mở Top xác nhận Yaw và hướng đầu xe.
+5. Mở Front/Side xác nhận chiều cao, đáy, không xuyên đất.
+6. Kiểm frame nội suy, đặc biệt lúc xe rẽ/bị che.
+7. Đối chiếu camera **đúng FOV và calibration** để xác nhận class/đầu-đuôi.
+8. Nếu toàn cảnh overlay lệch, **ghi bằng chứng và escalate**, không sửa tay hàng loạt để che lỗi.
+
+**Tự kiểm tra Day 14:** (1) Xe xa ít điểm có được co cuboid tùy tiện không? (2) Cả cảnh overlay lệch cùng phía nghi lỗi gì? (3) \(u\) có chia cho \(Z\) không? (4) Một xe đổi ID sau bị che là lỗi gì?
+
+---
+
+# SỔ TAY CÔNG THỨC VÀ BÀI TẬP
+
+## A. Bảng công thức tra cứu nhanh
+
+| Chủ đề | Công thức | Mức ôn |
+|---|---|---|
+| Box width/height | \(w=x_2-x_1,\ h=y_2-y_1\) | Cao |
+| Tâm box | \(x_c=(x_1+x_2)/2,\ y_c=(y_1+y_2)/2\) | Cao |
+| COCO→XYXY | \((x,y,x+w,y+h)\) | Cao |
+| YOLO normalized | \((x_c/W,y_c/H,w/W,h/H)\) | Cao |
+| Diện tích hợp | \(A+B-\text{giao}\) | Cao |
+| IoU | \(\text{giao}/\text{hợp}\) | Cao |
+| Precision | \(TP/(TP+FP)\) | Cao |
+| Recall | \(TP/(TP+FN)\) | Cao |
+| mAP | \((AP_1+\cdots+AP_C)/C\) | Cao |
+| Matching Cost cơ bản | \(1-IoU\) | Hiểu |
+| Frame từ FPS | \(FPS\times t\) | Cao |
+| MOTA | \(1-(FN+FP+IDSW)/GT\) | Cao |
+| IDF1 | \(2IDTP/(2IDTP+IDFP+IDFN)\) | Cao |
+| HOTA một ngưỡng | \(\sqrt{DetA\times AssA}\) | Hiểu |
+| Keypoint COCO-17 | \(17\times3=51\) giá trị | Cao |
+| Pixel Accuracy | \((TP+TN)/(TP+TN+FP+FN)\) | Cao |
+| Segmentation IoU | \(TP/(TP+FP+FN)\) | Cao |
+| Dice | \(2TP/(2TP+FP+FN)\) | Cao |
+| mIoU | \(\sum IoU_i/C\) | Cao |
+| Cohen's Kappa | \((p_o-p_e)/(1-p_e)\) | Hiểu |
+| Micro Recall | \(\sum TP/(\sum TP+\sum FN)\) | Hiểu |
+| Macro Recall | \(\sum R_i/C\) | Hiểu |
+| Privacy Miss Rate | \(\text{PII bị sót}/\text{Tổng PII thật}\) | Hiểu |
+| EAR | \((dọc_1+dọc_2)/(2\times ngang)\) | Cao |
+| Chuyển Z vào model (pipeline Day 13) | \(z_m=z_s-z_g-h_s\) | Hiểu |
+| Chuyển Z ngược | \(z_s=z_m+h_s+z_g\) | Hiểu |
+| Chiếu 3D→2D | \(u=f_xX/Z+c_x,\ v=f_yY/Z+c_y\) | Cao |
+
+**Không cần nhồi toàn bộ một lúc.** Nên ưu tiên: Box conversion → IoU → Precision/Recall → mAP → FPS → MOTA/IDF1 → Segmentation IoU/Dice → EAR → phép chiếu 3D.
+
+## B. 28 câu bài tập từ dễ đến vừa (mỗi ngày 2 câu)
+
+1. **Day 01:** AI, ML, DL quan hệ thế nào?
+2. **Day 01:** GT khác prediction? GT có bao giờ sai không?
+
+3. **Day 02:** XYXY=(20,30,120,90), đổi COCO XYWH và CENTER XYWH.
+4. **Day 02:** TP=40, FP=10, FN=20 → Precision/Recall?
+
+5. **Day 03:** 5 frame × 2 xe, FN=1, FP=1, IDSW=2 → MOTA?
+6. **Day 03:** Một xe đang ID 5, bị che rồi xuất hiện thành ID 9 → lỗi gì?
+
+7. **Day 04:** Trong COCO, v=1 nghĩa là gì?
+8. **Day 04:** 17 điểm × (x,y,v) có bao nhiêu giá trị?
+
+9. **Day 05:** Hai chiếc xe cùng class cần mask riêng từng chiếc → Semantic hay Instance?
+10. **Day 05:** TP=20, FP=10, FN=10 → IoU và Dice?
+
+11. **Day 06:** Pilot làm trước hay sau Annotation hàng loạt?
+12. **Day 06:** Hai annotator đồng thuận 95% có chứng minh nhãn đúng 95% không?
+
+13. **Day 07:** Vì sao frame 100 train và frame 101 test cùng video dễ là leakage?
+14. **Day 07:** Convert CVAT Tracking sang nhãn Detection có thể mất thông tin nào?
+
+15. **Day 08:** AI vẽ box trên bóng xe không phải vật thể → Accepted/Edited/Deleted/Added?
+16. **Day 08:** AI thiếu người đi bộ, reviewer làm gì?
+
+17. **Day 09:** Lane marking dùng Polyline hay Polygon?
+18. **Day 09:** Đèn xanh cho làn rẽ trái có tự động áp cho ego đi thẳng?
+
+19. **Day 10:** Bộ Landmark DMS có bao nhiêu điểm, trong đó môi trong bao nhiêu?
+20. **Day 10:** EAR thấp trong một frame có đủ xác nhận tài xế ngủ gật?
+
+21. **Day 11:** Xe bị cắt bởi mép ảnh → Truncated hay Occluded?
+22. **Day 11:** Vì sao cần QC riêng cho camera trước, sau, trái, phải?
+
+23. **Day 12:** Cuboid có bảy tham số nào?
+24. **Day 12:** Xe chạy lùi thì heading có nhất thiết cùng hướng chuyển động?
+
+25. **Day 13:** PointPillars thuộc họ point-based, voxel-based hay pillar-based?
+26. **Day 13:** Cả batch cuboid cùng lệch Z 1.5 m → kéo từng box hay xem pipeline?
+
+27. **Day 14:** X=2, Z=10, fx=1000, cx=500 → u bằng bao nhiêu?
+28. **Day 14:** Hai người bị một cuboid gộp chung → lỗi temporal nào?
+
+<details>
+<summary><strong>Xem đáp án giải thích</strong></summary>
+
+1. DL thuộc ML; ML thuộc AI.
+2. GT là nhãn tham chiếu; Prediction là kết quả model. GT vẫn có thể sai và phải QC.
+3. COCO=(20,30,100,60); CENTER=(70,60,100,60).
+4. Precision=40/50=80%; Recall=40/60≈66.7%.
+5. GT=5×2=10; MOTA=1−(1+1+2)/10=60%.
+6. Fragmentation (cùng vật bị tách ID; cần xét thêm quy tắc IDSW khi chấm benchmark).
+7. Điểm được gán nhãn nhưng bị che.
+8. 51.
+9. Instance Segmentation.
+10. IoU=20/(20+10+10)=50%; Dice=40/(40+10+10)≈66.7%.
+11. Trước.
+12. Không, hai người có thể cùng áp một quy tắc sai.
+13. Hai frame gần như giống nhau, không độc lập.
+14. Track ID, attribute hoặc metadata không được format đích giữ.
+15. Deleted trong luồng review pre-label hợp lệ.
+16. Added.
+17. Polyline.
+18. Không; phải xét relevance với ego lane/hướng đi.
+19. 50 điểm, môi trong 8 điểm.
+20. Không; phải xét chuỗi thời gian và ngưỡng.
+21. Truncated.
+22. Camera/view/distortion và lỗi đặc trưng khác nhau; chỉ số gộp che lỗi.
+23. (x,y,z,L,W,H,yaw).
+24. Không, heading vẫn theo đầu vật.
+25. Pillar-based.
+26. Kiểm hệ tọa độ/pipeline trước; không sửa hàng loạt để che lỗi.
+27. u=1000×(2/10)+500=700.
+28. Merge.
+
+</details>
+
+## C. Mười cặp khái niệm dễ nhầm nhất
+
+| Cặp | Cách phân biệt nhanh |
+|---|---|
+| AI / ML | Lĩnh vực lớn / nhánh học từ dữ liệu |
+| GT / Prediction | Nhãn tham chiếu / kết quả dự đoán |
+| Classification / Detection | Có class / có cả class và vị trí |
+| COCO XYWH / CENTER XYWH | Góc trên-trái / tâm |
+| Precision / Recall | Trong dự đoán có bao nhiêu đúng / trong vật thật tìm được bao nhiêu |
+| Detection / Tracking | Từng frame / liên kết cá thể qua frame |
+| Occluded / Outside | Bị che / không còn xuất hiện trong đoạn track |
+| ID Switch / Fragmentation | Đổi nhầm ID / một vật tách nhiều track |
+| Semantic / Instance | Class từng pixel / từng cá thể riêng |
+| Intrinsic / Extrinsic | Tham số camera / vị trí-hướng giữa các sensor |
+
+## D. Lộ trình ôn nhanh
+
+**Lượt 1:** Day 01–05, đọc các khái niệm và tự giải thích box/mask/keypoint/track bằng lời mình.
+
+**Lượt 2:** Luyện các công thức trọng tâm với số tròn. Tự trả lời: tử/mẫu đếm gì? Đầu vào nào còn thiếu? Có cần tính nhẩm hay chỉ xác định lỗi?
+
+**Lượt 3:** Day 06–11, tập nhận diện guideline gap, QA/QC, leakage, pre-label review, road semantics, DMS/OMS và fisheye.
+
+**Lượt 4:** Day 12–14, tập đọc bảy tham số cuboid, bảy lỗi temporal, calibration và phép chiếu 3D→2D.
+
+**Lượt 5:** Làm 28 câu không nhìn đáp án, sau đó mở lại mục đã sai; không cần đọc lại toàn bộ từ đầu.
+
+---
+
+## Tài liệu đã đối chiếu và giới hạn
+
+Tài liệu này biên soạn lại bằng lời dễ hiểu, bám các chủ đề trong **VinUni AI20K Level 2**:
+
+- Day 01 – *Hiểu về dữ liệu*.
+- Day 02 – *Detector hoạt động thế nào, xây từ con số 0, đo ra sao*.
+- Day 03 – *Tracker hoạt động thế nào, đo ra sao, xây từ con số 0*.
+- Day 04 – *Keypoint & Pose*.
+- Day 05 – *Segmentation — Từ Box Sang Mask* và *Từ pixel đến quyết định, từ U-Net số 0 đến AI hỗ trợ*.
+- Day 06 – *Quy trình dữ liệu và kiểm soát chất lượng*, *Chín bước Data Annotation Lifecycle*, *Từ mục tiêu đến release có thể audit*.
+- Day 07 – *Data Pipeline & Governance*.
+- Day 08 – *AI Data Assistance and Active Learning*.
+- Day 09 – [*Road Elements*](https://drive.google.com/file/d/13CRuZ1HYspnSIBgrYh0xkwRf6uSFrTw5/view).
+- Day 10 – [*DMS & OMS*](https://drive.google.com/file/d/1EK-k6oUYXBp0EwvZHxYSroFgRgwhTC6n/view).
+- Day 11 – [*SVM / 360° External Cameras*](https://drive.google.com/file/d/1WnCAxNC6VNXOIMv4_-4Oy0p7Q0fg2WdV/view).
+- Day 12 – [*Point Cloud & Cuboid*](https://drive.google.com/file/d/1o5TUA1T8UsJRXTTPsDgVH6pQFWCvS8-L/view).
+- Day 13 – [*3D Object Detection*](https://drive.google.com/file/d/1oYILdHXYHKpbpFbpyXnMwtguwg5gqepy/view).
+- Day 14 – [*Robotaxi B – Across Time & Sensors*](https://drive.google.com/file/d/1UNElnXLybYbeH-fCSZHPJCwP_elZm2QA/view).
+
+**Đây không phải bản chép nguyên văn tất cả slide.** Những phép tính vật lý/toán học bổ sung và ví dụ minh họa được trình bày để giúp hiểu, không tự suy ra là đề thi chắc chắn hỏi. Trong dự án thật, **guideline chính thức và hệ tọa độ/format của task** quyết định kết luận cuối.
+
+**HẾT – GIÁO TRÌNH LEVEL 2 DAY 01–14.**
